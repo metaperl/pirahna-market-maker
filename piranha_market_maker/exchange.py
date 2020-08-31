@@ -9,7 +9,7 @@ def factory(exchange_str):
     logger.debug(f"{exchange_settings=}")
     args = {
         'apiKey': exchange_settings.api_key,
-        'secret': exchange_settings.api_secret,
+        'secret': exchange_settings.secret,
     }
     logger.debug(f"args to ccxt={args}")
     exchange = exchange_class(args)

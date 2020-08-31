@@ -32,7 +32,7 @@ class Phemex(BaseModel):
     Documented at https://github.com/phemex/phemex-api-docs/blob/master/Public-Contract-API-en.md
     """
     api_key = ''
-    api_secret = ''
+    secret = ''
     endpoint = EndPoint()
 
 
