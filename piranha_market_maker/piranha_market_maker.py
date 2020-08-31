@@ -11,7 +11,11 @@ from settings import settings
 
 from loguru import logger
 from piranha_market_maker import exchange
+import piranha_market_maker.util as u
 
+def pretty_dump(o):
+    import pprint
+    return pprint.pformat(o, indent=4)
 
 class Requests:
 
@@ -19,7 +23,6 @@ class Requests:
 
         self.exchange = exchange.factory(settings.exchange_label)
         logger.debug(f"{self.exchange=}")
-
 
     def place_initial_orders(self, last_price, prices, quantity):
         responses = []
@@ -64,9 +67,13 @@ class Requests:
         return r['result'][TICKER[:3]]['available_balance']
 
     def get_position(self):
-        return self.ws.fetch('position')
+        open_orders = self.exchange.fetch_open_orders(settings.trading.pair)
+        logger.debug(f"{u.pretty_dump('OpenOrders', open_orders)}")
+        return open_orders
 
     def get_last_price(self):
+        t = self.exchange.fetch_ticker(settings.trading.pair)
+        logger.debug(f"{u.pretty_dump('Ticker', t)}")
         instr = self.ws.fetch(f'instrument_info.100ms.{TICKER}')
         return instr['last_price_e4'] * 10 ** -4
 

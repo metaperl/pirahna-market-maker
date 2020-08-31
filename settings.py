@@ -37,7 +37,7 @@ class Phemex(BaseModel):
 
 
 class Trading(BaseModel):
-    pair = "BTCUSD"
+    pair = "BTC/USD"
     number_of_orders = 20  # maximum is 50
     spread = 200  # in USD
     margin = 10  # in percent

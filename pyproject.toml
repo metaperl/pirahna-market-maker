@@ -10,6 +10,7 @@ ccxt = "^1.33.71"
 pydantic = "^1.6.1"
 python-dotenv = "^0.14.0"
 loguru = "^0.5.1"
+"ruamel.yaml" = "^0.16.10"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
