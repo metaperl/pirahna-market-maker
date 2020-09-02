@@ -155,6 +155,14 @@ version = "2.10"
 
 [[package]]
 category = "main"
+description = "Vestigial utilities from IPython"
+name = "ipython-genutils"
+optional = false
+python-versions = "*"
+version = "0.2.0"
+
+[[package]]
+category = "main"
 description = "Python logging made (stupidly) simple"
 name = "loguru"
 optional = false
@@ -347,6 +355,20 @@ version = "1.15.0"
 
 [[package]]
 category = "main"
+description = "Traitlets Python configuration system"
+name = "traitlets"
+optional = false
+python-versions = ">=3.7"
+version = "5.0.0"
+
+[package.dependencies]
+ipython-genutils = "*"
+
+[package.extras]
+test = ["pytest"]
+
+[[package]]
+category = "main"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 name = "urllib3"
 optional = false
@@ -392,7 +414,7 @@ idna = ">=2.0"
 multidict = ">=4.0"
 
 [metadata]
-content-hash = "f68315ea9842981b5009e054f6b9a1e53be09a3729c8956709b8b993ea24cf6c"
+content-hash = "142191358885918584b92f83724c2564cca5f6d1c044dc26cd18298bcf23810f"
 lock-version = "1.0"
 python-versions = "^3.8"
 
@@ -499,6 +521,10 @@ cryptography = [
 idna = [
     {file = "idna-2.10-py2.py3-none-any.whl", hash = "sha256:b97d804b1e9b523befed77c48dacec60e6dcb0b5391d57af6a65a312a90648c0"},
     {file = "idna-2.10.tar.gz", hash = "sha256:b307872f855b18632ce0c21c5e45be78c0ea7ae4c15c828c20788b26921eb3f6"},
+]
+ipython-genutils = [
+    {file = "ipython_genutils-0.2.0-py2.py3-none-any.whl", hash = "sha256:72dd37233799e619666c9f639a9da83c34013a73e8bbc79a7a6348d93c61fab8"},
+    {file = "ipython_genutils-0.2.0.tar.gz", hash = "sha256:eb2e116e75ecef9d4d228fdc66af54269afa26ab4463042e33785b887c628ba8"},
 ]
 loguru = [
     {file = "loguru-0.5.1-py3-none-any.whl", hash = "sha256:e5d362a43cd2fc2da63551d79a6830619c4d5b3a8b976515748026f92f351b61"},
@@ -637,6 +663,10 @@ requests = [
 six = [
     {file = "six-1.15.0-py2.py3-none-any.whl", hash = "sha256:8b74bedcbbbaca38ff6d7491d76f2b06b3592611af620f8426e82dddb04a5ced"},
     {file = "six-1.15.0.tar.gz", hash = "sha256:30639c035cdb23534cd4aa2dd52c3bf48f06e5f4a941509c8bafd8ce11080259"},
+]
+traitlets = [
+    {file = "traitlets-5.0.0-py3-none-any.whl", hash = "sha256:62a037f12ccb823fb05823afbe35fe0273bc18fa3202d0cf0ea8f24e97e464be"},
+    {file = "traitlets-5.0.0.tar.gz", hash = "sha256:0d9c4005506b306b0a99551e96174b8bedc675c2dd048f92b3bbbb7d86ac93a9"},
 ]
 urllib3 = [
     {file = "urllib3-1.25.10-py2.py3-none-any.whl", hash = "sha256:e7983572181f5e1522d9c98453462384ee92a0be7fac5f1413a1e35c56cc0461"},

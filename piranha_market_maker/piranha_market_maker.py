@@ -13,6 +13,9 @@ from loguru import logger
 from piranha_market_maker import exchange
 import piranha_market_maker.util as u
 
+ORDER_RESET_TIME = settings.trading.order_reset_time
+TICKER = settings.trading.pair
+
 def pretty_dump(o):
     import pprint
     return pprint.pformat(o, indent=4)
@@ -29,30 +32,27 @@ class Requests:
         self.set_to_cross()
         for price in prices:
             if price > last_price:
-                side = 'Sell'
+                side = 'sell'
             else:
-                side = 'Buy'
-            responses.append(self.session.place_active_order(
-                symbol=TICKER,
-                order_type='Limit',
+                side = 'buy'
+            responses.append(self.exchange.ccxt.create_order(
+                symbol=settings.trading.pair,
+                type='limit',
                 side=side,
-                qty=quantity,
-                price=price,
-                time_in_force='PostOnly',
+                amount=quantity,
+                price=price
             ))
         return responses
 
     def place_closing_orders(self, side, prices, quantity):
         responses = []
         for price in prices:
-            responses.append(self.session.place_active_order(
+            responses.append(self.exchange.ccxt.place_active_order(
                 symbol=TICKER,
-                order_type='Limit',
+                order_type='limit',
                 side=side,
-                qty=quantity,
+                amount=quantity,
                 price=price,
-                time_in_force='PostOnly',
-                reduce_only=True
             ))
         return responses
 
@@ -63,25 +63,25 @@ class Requests:
         return self.session.cancel_all_active_orders(TICKER)
 
     def get_wallet_balance(self):
-        r = self.session.get_wallet_balance('BTC')
-        return r['result'][TICKER[:3]]['available_balance']
+        return self.exchange.free_coin(settings.trading.wallet_coin)
+
 
     def get_position(self):
-        open_orders = self.exchange.fetch_open_orders(settings.trading.pair)
+        open_orders = self.exchange.ccxt.fetch_open_orders(settings.trading.pair)
         logger.debug(f"{u.pretty_dump('OpenOrders', open_orders)}")
         return open_orders
 
     def get_last_price(self):
-        t = self.exchange.fetch_ticker(settings.trading.pair)
+        t = self.exchange.ccxt.fetch_ticker(settings.trading.pair)
         logger.debug(f"{u.pretty_dump('Ticker', t)}")
-        instr = self.ws.fetch(f'instrument_info.100ms.{TICKER}')
-        return instr['last_price_e4'] * 10 ** -4
+        return t['last']
 
     def ping(self):
         return self.ws.ping()
 
     def set_to_cross(self):
-        return self.session.change_user_leverage(TICKER, 0)
+        pass
+        # return self.session.change_user_leverage(TICKER, 0)
 
     def set_stop_loss(self):
         self.session.set_trading_stop(TICKER,
@@ -98,6 +98,11 @@ class Algorithm:
 
     def submit_initial(self):
 
+        SPREAD = settings.trading.spread
+        NUM_OF_ORDERS = settings.trading.number_of_orders
+        MARGIN = settings.trading.margin
+        USE = settings.trading.use
+
         # Determine last price.
         last_price = self.req.get_last_price()
 
@@ -113,11 +118,14 @@ class Algorithm:
         prices.append(min_p)
 
         # Determine the margin per order.
-        balance = self.req.get_wallet_balance() * last_price * MARGIN
+        # 1st determine amount of capital we have to play with
+        balance = self.req.get_wallet_balance() * last_price * MARGIN * USE
+        # Divide the capital into orders
         quantity = balance / NUM_OF_ORDERS
 
         # Set initial orders.
-        self.req.place_initial_orders(last_price, prices, quantity)
+        responses = self.req.place_initial_orders(last_price, prices, quantity)
+        logger.debug(f"{responses=}")
 
         # Return last price.
         return last_price, interval, quantity
@@ -148,7 +156,7 @@ class Algorithm:
 
         # Close any initial position.
         try:
-            if self.req.get_position()[TICKER]['size'] > 0:
+            if len(self.req.get_position()) > 0:
                 self.req.close_position()
         except KeyError:
             pass
@@ -156,10 +164,6 @@ class Algorithm:
         # Set initial booleans.
         orders_set = False
         closing = False
-
-        # Await connection.
-        while self.req._test_sub() == {}:
-            time.sleep(1)
 
         while True:
 
@@ -174,37 +178,43 @@ class Algorithm:
                 set_time = time.time()
                 orders_set = True
 
+
             # Wait for position.
             position = self.req.get_position()
 
+
+
             # If we haven't received any position data yet, handle it.
-            try:
-                position[TICKER]['size']
-            except KeyError:
-                position = {};
-                position[TICKER]['size'] = 0
+            # try:
+            #     position[TICKER]['size']
+            # except KeyError:
+            #     position = {};
+            #     position[TICKER]['size'] = 0
 
             # While we are in a position...
-            while position[TICKER]['size'] > 0:
+            while len(position) > 0:
+
+                logger.debug(f"{median=}, {closing=}, {last=}")
 
                 # If we're not trying to close yet.
                 if not closing:
 
                     # Reload last price.
                     last = self.req.get_last_price()
+                    logger.debug(f"Last price={last}. {median=}")
 
-                    # If we're in position and we cross back over the median.
-                    if ((position[TICKER]['side'] == 'Buy' and last > median) or
-                            (position[TICKER]['side'] == 'Sell' and last < median)):
-                        # Cancel all orders and set stop loss at B.E.
-                        self.req.cancel_all()
-                        self.req.set_stop_loss()
-
-                        # Set close orders and set boolean to True.
-                        self.submit_closing(median, interval, qty)
-                        closing = True
-
-                # Reload position.
+                #     # If we're in position and we cross back over the median.
+                #     if ((position[TICKER]['side'] == 'Buy' and last > median) or
+                #             (position[TICKER]['side'] == 'Sell' and last < median)):
+                #         # Cancel all orders and set stop loss at B.E.
+                #         self.req.cancel_all()
+                #         self.req.set_stop_loss()
+                #
+                #         # Set close orders and set boolean to True.
+                #         self.submit_closing(median, interval, qty)
+                #         closing = True
+                #
+                # # Reload position.
                 position = self.req.get_position()
 
                 # Sleep for a second.
@@ -212,7 +222,7 @@ class Algorithm:
 
             # If we're waited until reset time without fills, retry.
             if (time.time() - set_time > ORDER_RESET_TIME and not closing and
-                    orders_set and position[TICKER]['size'] == 0):
+                    orders_set and len(position) == 0):
                 # Cancel and retry.
                 self.req.cancel_all()
                 orders_set = False

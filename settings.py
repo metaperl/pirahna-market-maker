@@ -38,9 +38,11 @@ class Phemex(BaseModel):
 
 class Trading(BaseModel):
     pair = "BTC/USD"
-    number_of_orders = 20  # maximum is 50
+    wallet_coin = 'BTC'
+    number_of_orders = 5  # maximum is 50
     spread = 200  # in USD
-    margin = 10  # in percent
+    margin = 10  # multiplier of capital - https://github.com/verata-veritatis/bybit-market-maker/issues/5
+    use = 0.5  # How much of capital to use
 
     order_reset_time = minutes(5)  # in seconds
 
